@@ -1,0 +1,17 @@
+scratch/
+*.bundle
+*.log
+*.o
+*.so
+*.jar
+*.rbc
+doc
+log
+pkg
+tmp
+t/
+.rbx/
+Gemfile.lock
+.idea/
+
+*.gem

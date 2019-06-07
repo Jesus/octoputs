@@ -1,0 +1,2 @@
+class AFile
+end
