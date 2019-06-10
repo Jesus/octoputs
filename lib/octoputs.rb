@@ -67,6 +67,13 @@ class Octoputs
 
     # Write the result of the application back to the browser
     write_response(fd, result)
+
+    # Stdout the request
+    puts "%5s %-68s [%3i]" % [
+      request['REQUEST_METHOD'],
+      request['REQUEST_PATH'],
+      result.first
+    ]
   end
 
   def listen
