@@ -3,4 +3,14 @@
 require 'bundler/setup'
 require 'octoputs'
 
-Octoputs.new
+app = lambda do |env|
+  sleep 0.05
+  [
+    200,
+    { 'Content-Type' => 'text/plain' },
+    "This is a cool Rack-compatible application"
+  ]
+end
+
+server = Octoputs.new app
+server.listen
