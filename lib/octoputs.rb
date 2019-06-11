@@ -94,18 +94,7 @@ class Octoputs
     server = TCPServer.new(HOST, PORT)
     server.setsockopt Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true
 
-    # Note: I've explored changing the value of the backlog. I was expecting
-    #       that when the amount of concurrent requests is higher than the
-    #       allowed backlog of the listening server the connections would start
-    #       being rejected, however they seem to be kept waiting.
-    #
-    #       Even weirder, seems like connections are quickly accepted but take
-    #       longer to be read, which is very confusing.
-    #
-    #       Also in some cases they're being closed but I'm not sure at what
-    #       point of the request lifecycle. This never happens when concurrency
-    #       in the benchmarking tool is set to something smaller than backlog.
-    server.listen 10
+    server.listen 128 # 128 is the max. for most systems
 
     loop do
       sockets, = IO.select [server], nil, nil, 0
