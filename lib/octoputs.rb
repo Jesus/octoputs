@@ -1,6 +1,14 @@
 require 'octoputs/puma_http11'
 require 'socket'
 
+def log(event, details = '')
+  puts "%12s | %-16s | %s" % [
+    Time.now.strftime("%H:%M %S.%L"),
+    event,
+    details
+  ]
+end
+
 class Octoputs
   HOST = '127.0.0.1'
   PORT = 3000
@@ -58,9 +66,20 @@ class Octoputs
   end
 
   def handle_request(fd)
+    request_id = "fd:#{fd.fileno}"
+    log("#{request_id} start")
+
     # Read the whole request and parse it
     request = read_request(fd)
-    return if request == :closed
+    if request == :closed
+      log("#{request_id} closed")
+      return
+    end
+
+    log(
+      "#{request_id} parsed",
+      request.values_at('REQUEST_METHOD', 'REQUEST_PATH').join(' ')
+    )
 
     # Execute the Rack application
     result = @app.call(request)
@@ -68,12 +87,7 @@ class Octoputs
     # Write the result of the application back to the browser
     write_response(fd, result)
 
-    # Stdout the request
-    puts "%5s %-68s [%3i]" % [
-      request['REQUEST_METHOD'],
-      request['REQUEST_PATH'],
-      result.first
-    ]
+    log("#{request_id} done", "status: #{result.first}")
   end
 
   def listen
