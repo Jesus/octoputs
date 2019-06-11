@@ -4,11 +4,14 @@ require 'bundler/setup'
 require 'octoputs'
 
 app = lambda do |env|
-  sleep 0.05
+  # A standard web application could run in about 125ms, the following line
+  # adds a delay so the runtime looks more realistic.
+  sleep((50 + (rand(15) + 1) * (rand(15) + 1)) * 0.01)
+
   [
     200,
     { 'Content-Type' => 'text/plain' },
-    "This is a cool Rack-compatible application"
+    "This is a cool Rack application\n"
   ]
 end
 
