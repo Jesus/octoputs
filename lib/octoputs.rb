@@ -1,11 +1,11 @@
 require 'octoputs/puma_http11'
 require 'socket'
 
-def log(event, details = '')
-  puts "%12s | %-16s | %s" % [
+def log(event, details = nil)
+  puts "%12s | %-16s%s" % [
     Time.now.strftime("%H:%M %S.%L"),
     event,
-    details
+    details ? " | #{details}" : ""
   ]
 end
 
@@ -91,6 +91,7 @@ class Octoputs
   end
 
   def listen
+    log("Listening on #{HOST}:#{PORT}")
     server = TCPServer.new(HOST, PORT)
     server.setsockopt Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true
 

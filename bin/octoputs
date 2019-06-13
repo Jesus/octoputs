@@ -3,17 +3,14 @@
 require 'bundler/setup'
 require 'octoputs'
 
-app = lambda do |env|
-  # A standard web application could run in about 125ms, the following line
-  # adds a delay so the runtime looks more realistic.
-  sleep((50 + (rand(15) + 1) * (rand(15) + 1)) * 0.01)
-
-  [
-    200,
-    { 'Content-Type' => 'text/plain' },
-    "This is a cool Rack application\n"
-  ]
+if ARGV.size.zero?
+  puts "Usage: octoputs <rackup file>"
+  exit 1
 end
 
-server = Octoputs.new app
-server.listen
+def run(app)
+  server = Octoputs.new app
+  server.listen
+end
+
+load ARGV[0]
