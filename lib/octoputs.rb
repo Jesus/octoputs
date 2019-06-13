@@ -104,8 +104,20 @@ class Octoputs
     log("#{request_id} done", "status: #{result.first}")
   end
 
+  def setup_signals
+    Signal.trap "SIGINT" do
+      puts "bye bye!"
+      exit 0
+    end
+    puts "Press Ctrl+C to shut down"
+  end
+
   def listen
-    log("Listening on #{HOST}:#{PORT}")
+    log "mode: #{MODE.inspect}"
+    log "Listening on #{HOST}:#{PORT}"
+
+    setup_signals
+
     server = TCPServer.new(HOST, PORT)
     server.setsockopt Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true
 
