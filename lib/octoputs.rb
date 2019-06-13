@@ -9,6 +9,10 @@ def log(event, details = nil)
   ]
 end
 
+# MODE = :single_thread
+MODE = :multi_thread
+# MODE = :thread_pool
+
 class Octoputs
   HOST = '127.0.0.1'
   PORT = 3000
@@ -65,7 +69,17 @@ class Octoputs
     end
   end
 
-  def handle_request(fd)
+  if MODE == :single_thread
+    def handle_request(fd)
+      _handle_request(fd)
+    end
+  elsif MODE == :multi_thread
+    def handle_request(fd)
+      Thread.new { _handle_request(fd) }
+    end
+  end
+
+  def _handle_request(fd)
     request_id = "fd:#{fd.fileno}"
     log("#{request_id} start")
 
