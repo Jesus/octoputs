@@ -1,17 +1,12 @@
 require 'octoputs/puma_http11'
+require 'octoputs/thread_pool'
+require 'octoputs/logger'
 require 'socket'
 
-def log(event, details = nil)
-  puts "%12s | %-16s%s" % [
-    Time.now.strftime("%H:%M %S.%L"),
-    event,
-    details ? " | #{details}" : ""
-  ]
-end
-
 # MODE = :single_thread
-MODE = :multi_thread
-# MODE = :thread_pool
+# MODE = :multi_thread
+MODE = :thread_pool
+N_THREADS = 8
 
 class Octoputs
   HOST = '127.0.0.1'
@@ -70,53 +65,60 @@ class Octoputs
   end
 
   if MODE == :single_thread
-    def handle_request(fd)
-      _handle_request(fd)
+    def invoke_rack(request)
+      yield @app.call(request)
     end
   elsif MODE == :multi_thread
-    def handle_request(fd)
-      Thread.new { _handle_request(fd) }
+    def invoke_rack(request)
+      Thread.new { yield @app.call(request) }
+    end
+  elsif MODE == :thread_pool
+    def invoke_rack(request, &block)
+      @thread_pool.enqueue do
+        yield @app.call(request)
+      end
     end
   end
 
-  def _handle_request(fd)
+  def handle_request(fd)
     request_id = "fd:#{fd.fileno}"
-    log("#{request_id} start")
 
     # Read the whole request and parse it
     request = read_request(fd)
-    if request == :closed
-      log("#{request_id} closed")
-      return
-    end
+    return if request == :closed
 
-    log(
+    Logger.log(
       "#{request_id} parsed",
       request.values_at('REQUEST_METHOD', 'REQUEST_PATH').join(' ')
     )
 
-    # Execute the Rack application
-    result = @app.call(request)
+    invoke_rack(request) do |result|
+      # Write the result of the application back to the browser
+      write_response(fd, result)
 
-    # Write the result of the application back to the browser
-    write_response(fd, result)
-
-    log("#{request_id} done", "status: #{result.first}")
+      Logger.log("#{request_id} done", "status: #{result.first}")
+    end
   end
 
   def setup_signals
     Signal.trap "SIGINT" do
+      @thread_pool.shut_down if MODE == :thread_pool
+
       puts "bye bye!"
       exit 0
     end
     puts "Press Ctrl+C to shut down"
   end
 
-  def listen
-    log "mode: #{MODE.inspect}"
-    log "Listening on #{HOST}:#{PORT}"
+  def start
+    Logger.log "mode: #{MODE.inspect}"
+    Logger.log "Listening on #{HOST}:#{PORT}"
 
     setup_signals
+
+    if MODE == :thread_pool
+      @thread_pool = ThreadPool.new N_THREADS
+    end
 
     server = TCPServer.new(HOST, PORT)
     server.setsockopt Socket::SOL_SOCKET, Socket::SO_REUSEADDR, true

@@ -10,7 +10,7 @@ end
 
 def run(app)
   server = Octoputs.new app
-  server.listen
+  server.start
 end
 
 load ARGV[0]
